@@ -1,8 +1,6 @@
 package ascendra_backend.auth.oauth;
 
 import ascendra_backend.auth.security.JwtService;
-import ascendra_backend.user.entity.AuthProvider;
-import ascendra_backend.user.entity.Role;
 import ascendra_backend.user.entity.User;
 import ascendra_backend.user.repository.UserRepository;
 
@@ -18,6 +16,8 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 @Component
 @RequiredArgsConstructor
@@ -26,6 +26,9 @@ public class OAuth2AuthenticationSuccessHandler
 
     private final UserRepository userRepository;
     private final JwtService jwtService;
+
+    private static final String FRONTEND_URL =
+            "https://ascendra-bikku.duckdns.org";
 
     @Override
     public void onAuthenticationSuccess(
@@ -37,86 +40,32 @@ public class OAuth2AuthenticationSuccessHandler
         OAuth2User oauth2User =
                 (OAuth2User) authentication.getPrincipal();
 
-        // Google information
         String email =
                 oauth2User.getAttribute("email");
 
-        String name =
-                oauth2User.getAttribute("name");
-
-        String providerId =
-                oauth2User.getAttribute("sub");
-
-        String picture =
-                oauth2User.getAttribute("picture");
-
-        if (email == null || providerId == null) {
-
+        if (email == null || email.isBlank()) {
             response.sendRedirect(
-                    "http://localhost:5173/login?error=google_data_missing"
+                    FRONTEND_URL
+                            + "/login?error=google_email_missing"
             );
-
             return;
         }
 
-        /*
-         * GoogleOAuth2Service already creates/updates
-         * the user.
-         *
-         * Yaha dobara blindly create nahi karna.
-         */
+        String cleanEmail =
+                email.trim().toLowerCase();
+
         User user =
-                userRepository.findByEmail(email)
+                userRepository.findByEmail(cleanEmail)
                         .orElse(null);
 
-        /*
-         * Safety:
-         * Agar kisi reason se service ke baad bhi
-         * user nahi mila, to yaha create kar denge.
-         */
         if (user == null) {
-
-            user =
-                    User.builder()
-                            .name(
-                                    name != null
-                                            ? name
-                                            : "Google User"
-                            )
-                            .email(email)
-                            .password(null)
-                            .role(Role.LEARNER)
-                            .provider(AuthProvider.GOOGLE)
-                            .providerId(providerId)
-                            .profilePicture(picture)
-                            .build();
-
-            user =
-                    userRepository.save(user);
-
-        } else {
-
-            /*
-             * Existing user ko Google account ke saath
-             * sync rakho.
-             */
-            if (name != null && !name.isBlank()) {
-                user.setName(name);
-            }
-
-            user.setProvider(AuthProvider.GOOGLE);
-            user.setProviderId(providerId);
-
-            if (picture != null && !picture.isBlank()) {
-                user.setProfilePicture(picture);
-            }
-
-            userRepository.save(user);
+            response.sendRedirect(
+                    FRONTEND_URL
+                            + "/login?error=google_account_error"
+            );
+            return;
         }
 
-        /*
-         * JWT generate karo
-         */
         String token =
                 jwtService.generateToken(
                         user.getId(),
@@ -124,13 +73,16 @@ public class OAuth2AuthenticationSuccessHandler
                         user.getRole().name()
                 );
 
-        /*
-         * Frontend par token bhejo
-         */
-        String redirectUrl =
-                "http://localhost:5173/oauth-success?token="
-                        + token;
+        String encodedToken =
+                URLEncoder.encode(
+                        token,
+                        StandardCharsets.UTF_8
+                );
 
-        response.sendRedirect(redirectUrl);
+        response.sendRedirect(
+                FRONTEND_URL
+                        + "/oauth-success?token="
+                        + encodedToken
+        );
     }
 }

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import gsap from "gsap";
+
 import {
     ArrowRight,
     CheckCircle2,
@@ -39,6 +40,7 @@ function Login() {
 
     useEffect(() => {
         const ctx = gsap.context(() => {
+
             gsap.from(".auth-topbar", {
                 y: -20,
                 opacity: 0,
@@ -70,6 +72,7 @@ function Login() {
                 stagger: 0.12,
                 ease: "power3.out"
             });
+
         }, containerRef);
 
         return () => ctx.revert();
@@ -87,7 +90,9 @@ function Login() {
         const cleanEmail = email.trim();
 
         if (!cleanEmail || !password) {
-            setError("Please enter your email and password.");
+            setError(
+                "Please enter your email and password."
+            );
             return;
         }
 
@@ -109,8 +114,16 @@ function Login() {
             }
 
             setDarkMode(false);
-            localStorage.setItem("ascendra-theme", "light");
-            localStorage.setItem("ascendra_theme", "light");
+
+            localStorage.setItem(
+                "ascendra-theme",
+                "light"
+            );
+
+            localStorage.setItem(
+                "ascendra_theme",
+                "light"
+            );
 
             const role =
                 user?.role
@@ -118,24 +131,34 @@ function Login() {
                     .toUpperCase();
 
             if (role === "EXPERT") {
-                navigate("/expert", {
-                    replace: true
-                });
+                navigate(
+                    "/expert",
+                    {
+                        replace: true
+                    }
+                );
 
                 return;
             }
 
             if (role === "ADMIN") {
-                navigate("/admin", {
-                    replace: true
-                });
+                navigate(
+                    "/admin",
+                    {
+                        replace: true
+                    }
+                );
 
                 return;
             }
 
-            navigate("/learner", {
-                replace: true
-            });
+            navigate(
+                "/learner",
+                {
+                    replace: true
+                }
+            );
+
         } catch (err) {
             console.error(
                 "Login error:",
@@ -148,16 +171,22 @@ function Login() {
             const backendError =
                 err?.response?.data?.error;
 
-            if (err?.response?.status === 401) {
+            if (
+                err?.response?.status === 401
+            ) {
                 setError(
                     backendMessage ||
                     "Invalid email or password."
                 );
-            } else if (err?.response?.status === 403) {
+
+            } else if (
+                err?.response?.status === 403
+            ) {
                 setError(
                     backendMessage ||
                     "You are not allowed to login."
                 );
+
             } else {
                 setError(
                     backendMessage ||
@@ -166,6 +195,7 @@ function Login() {
                     "Unable to login. Please try again."
                 );
             }
+
         } finally {
             setLoading(false);
         }
@@ -175,11 +205,24 @@ function Login() {
         setError("");
 
         setDarkMode(false);
-        localStorage.setItem("ascendra-theme", "light");
-        localStorage.setItem("ascendra_theme", "light");
+
+        localStorage.setItem(
+            "ascendra-theme",
+            "light"
+        );
+
+        localStorage.setItem(
+            "ascendra_theme",
+            "light"
+        );
 
         window.location.href =
-            "http://localhost:8080/oauth2/authorization/google";
+            "/oauth2/authorization/google";
+    };
+
+    const handleForgotPassword = () => {
+        setError("");
+        navigate("/forgot-password");
     };
 
     return (
@@ -187,32 +230,54 @@ function Login() {
             className="auth-page"
             ref={containerRef}
         >
+
             <div className="auth-background">
+
                 <div className="auth-noise" />
+
                 <div className="auth-grid" />
+
                 <div className="auth-orb auth-orb-one" />
+
                 <div className="auth-orb auth-orb-two" />
+
                 <div className="auth-orb auth-orb-three" />
+
                 <div className="auth-glow auth-glow-one" />
+
                 <div className="auth-glow auth-glow-two" />
+
             </div>
 
+            {/* TOP BAR */}
+
             <header className="auth-topbar">
+
                 <Link
                     to="/"
                     className="auth-logo"
                 >
+
                     <span className="logo-mark">
                         A
                     </span>
 
                     <span className="logo-copy">
-                        <strong>Ascendra</strong>
-                        <small>Learn beyond limits</small>
+
+                        <strong>
+                            Ascendra
+                        </strong>
+
+                        <small>
+                            Learn beyond limits
+                        </small>
+
                     </span>
+
                 </Link>
 
                 <div className="auth-top-actions">
+
                     <ThemeToggle />
 
                     <span className="auth-top-divider" />
@@ -226,24 +291,41 @@ function Login() {
                         className="top-auth-link"
                     >
                         Create account
-                        <ArrowRight size={15} />
+
+                        <ArrowRight
+                            size={15}
+                        />
+
                     </Link>
+
                 </div>
+
             </header>
 
+            {/* MAIN */}
+
             <main className="auth-layout">
+
+                {/* HERO */}
+
                 <section className="auth-hero">
+
                     <div className="auth-hero-content">
+
                         <div className="auth-eyebrow">
+
                             <span className="eyebrow-line" />
 
                             <span className="eyebrow-icon">
-                                <Sparkles size={14} />
+                                <Sparkles
+                                    size={14}
+                                />
                             </span>
 
                             <span>
                                 YOUR NEXT CHAPTER
                             </span>
+
                         </div>
 
                         <h1>
@@ -259,40 +341,56 @@ function Login() {
                             <span className="hero-accent">
                                 Become more.
                             </span>
+
                         </h1>
 
                         <p className="auth-hero-description">
-                            Connect with experienced professionals,
-                            build real-world skills and move closer
-                            to your career goals through focused
-                            1-on-1 mentorship.
+                            Connect with experienced
+                            professionals, build
+                            real-world skills and move
+                            closer to your career goals
+                            through focused 1-on-1
+                            mentorship.
                         </p>
 
                         <div className="hero-trust-row">
+
                             <div className="hero-trust-item">
+
                                 <CheckCircle2 />
+
                                 <span>
                                     Verified experts
                                 </span>
+
                             </div>
 
                             <div className="hero-trust-item">
+
                                 <ShieldCheck />
+
                                 <span>
                                     Secure payments
                                 </span>
+
                             </div>
 
                             <div className="hero-trust-item">
+
                                 <Users />
+
                                 <span>
                                     Personal guidance
                                 </span>
+
                             </div>
+
                         </div>
 
                         <div className="auth-hero-stats">
+
                             <div className="hero-stat">
+
                                 <strong>
                                     10K+
                                 </strong>
@@ -300,9 +398,11 @@ function Login() {
                                 <span>
                                     Learners
                                 </span>
+
                             </div>
 
                             <div className="hero-stat">
+
                                 <strong>
                                     500+
                                 </strong>
@@ -310,9 +410,11 @@ function Login() {
                                 <span>
                                     Experts
                                 </span>
+
                             </div>
 
                             <div className="hero-stat">
+
                                 <strong>
                                     4.9
                                 </strong>
@@ -320,22 +422,31 @@ function Login() {
                                 <span>
                                     Avg. rating
                                 </span>
+
                             </div>
+
                         </div>
+
                     </div>
 
+                    {/* FLOATING REVIEW */}
+
                     <div className="auth-floating-card floating-review">
+
                         <div className="floating-avatar">
                             JL
                         </div>
 
                         <div className="floating-review-content">
+
                             <div className="floating-review-stars">
+
                                 <Star />
                                 <Star />
                                 <Star />
                                 <Star />
                                 <Star />
+
                             </div>
 
                             <strong>
@@ -343,17 +454,26 @@ function Login() {
                             </strong>
 
                             <span>
-                                Trusted by professionals worldwide
+                                Trusted by professionals
+                                worldwide
                             </span>
+
                         </div>
+
                     </div>
 
+                    {/* FLOATING SESSION */}
+
                     <div className="auth-floating-card floating-session">
+
                         <div className="floating-session-icon">
+
                             <CheckCircle2 />
+
                         </div>
 
                         <div>
+
                             <strong>
                                 Mentoring session
                             </strong>
@@ -361,15 +481,23 @@ function Login() {
                             <span>
                                 Ready when you are
                             </span>
+
                         </div>
+
                     </div>
+
                 </section>
 
+                {/* FORM */}
+
                 <section className="auth-form-section">
+
                     <div className="auth-card">
+
                         <div className="auth-card-accent" />
 
                         <div className="auth-card-top">
+
                             <div className="auth-mobile-logo">
                                 A
                             </div>
@@ -380,17 +508,24 @@ function Login() {
 
                             <h2>
                                 Sign in to
-                                <span> Ascendra</span>
+                                <span>
+                                    {" "}Ascendra
+                                </span>
                             </h2>
 
                             <p>
-                                Continue your journey and pick up
-                                exactly where you left off.
+                                Continue your journey and
+                                pick up exactly where you
+                                left off.
                             </p>
+
                         </div>
+
+                        {/* ERROR */}
 
                         {error && (
                             <div className="auth-error">
+
                                 <span className="error-icon">
                                     !
                                 </span>
@@ -398,21 +533,31 @@ function Login() {
                                 <span>
                                     {error}
                                 </span>
+
                             </div>
                         )}
+
+                        {/* LOGIN FORM */}
 
                         <form
                             onSubmit={handleSubmit}
                             className="auth-form"
                         >
+
+                            {/* EMAIL */}
+
                             <div className="auth-field">
+
                                 <label htmlFor="login-email">
                                     Email address
                                 </label>
 
                                 <div className="auth-input">
+
                                     <span className="input-icon">
-                                        <Mail size={17} />
+                                        <Mail
+                                            size={17}
+                                        />
                                     </span>
 
                                     <input
@@ -428,11 +573,17 @@ function Login() {
                                             )
                                         }
                                     />
+
                                 </div>
+
                             </div>
 
+                            {/* PASSWORD */}
+
                             <div className="auth-field">
+
                                 <div className="auth-label-row">
+
                                     <label htmlFor="login-password">
                                         Password
                                     </label>
@@ -441,19 +592,23 @@ function Login() {
                                         type="button"
                                         className="forgot-password"
                                         disabled={loading}
-                                        onClick={() =>
-                                            setError(
-                                                "Password reset is not configured yet."
-                                            )
+                                        onClick={
+                                            handleForgotPassword
                                         }
                                     >
                                         Forgot password?
                                     </button>
+
                                 </div>
 
                                 <div className="auth-input">
+
                                     <span className="input-icon">
-                                        <Lock size={17} />
+
+                                        <Lock
+                                            size={17}
+                                        />
+
                                     </span>
 
                                     <input
@@ -489,43 +644,71 @@ function Login() {
                                                 : "Show password"
                                         }
                                     >
+
                                         {showPassword ? (
-                                            <EyeOff size={17} />
+                                            <EyeOff
+                                                size={17}
+                                            />
                                         ) : (
-                                            <Eye size={17} />
+                                            <Eye
+                                                size={17}
+                                            />
                                         )}
+
                                     </button>
+
                                 </div>
+
                             </div>
+
+                            {/* SIGN IN */}
 
                             <button
                                 type="submit"
                                 className="primary-auth-btn"
                                 disabled={loading}
                             >
+
                                 <span>
                                     {loading
                                         ? "Signing in..."
-                                        : "Sign in"}
+                                        : "Sign in"
+                                    }
                                 </span>
 
                                 {!loading && (
                                     <span className="button-arrow">
-                                        <ArrowRight size={18} />
+
+                                        <ArrowRight
+                                            size={18}
+                                        />
+
                                     </span>
                                 )}
 
                                 {loading && (
                                     <span className="auth-spinner" />
                                 )}
+
                             </button>
+
                         </form>
 
+                        {/* DIVIDER */}
+
                         <div className="auth-divider">
+
                             <span />
-                            <small>OR CONTINUE WITH</small>
+
+                            <small>
+                                OR CONTINUE WITH
+                            </small>
+
                             <span />
+
                         </div>
+
+                        {/* GOOGLE */}
 
                         <button
                             type="button"
@@ -533,6 +716,7 @@ function Login() {
                             disabled={loading}
                             onClick={googleLogin}
                         >
+
                             <span className="google-icon">
                                 G
                             </span>
@@ -540,28 +724,46 @@ function Login() {
                             <span>
                                 Continue with Google
                             </span>
+
                         </button>
 
+                        {/* SECURITY */}
+
                         <div className="auth-security">
-                            <ShieldCheck size={15} />
+
+                            <ShieldCheck
+                                size={15}
+                            />
 
                             <span>
-                                Protected with secure authentication
+                                Protected with secure
+                                authentication
                             </span>
+
                         </div>
 
+                        {/* REGISTER */}
+
                         <p className="auth-bottom-text">
+
                             Don't have an account?
 
                             <Link to="/register">
                                 Create account
                             </Link>
+
                         </p>
+
                     </div>
+
                 </section>
+
             </main>
 
+            {/* FOOTER */}
+
             <footer className="auth-footer">
+
                 <span>
                     © 2026 Ascendra
                 </span>
@@ -573,7 +775,9 @@ function Login() {
                 <span>
                     Learn. Connect. Grow.
                 </span>
+
             </footer>
+
         </div>
     );
 }

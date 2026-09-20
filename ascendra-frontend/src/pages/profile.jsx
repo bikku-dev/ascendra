@@ -52,7 +52,7 @@ function Profile() {
 
 
                 const response = await fetch(
-                    "http://localhost:8080/api/user/profile",
+                    "/api/user/profile",
                     {
                         method: "GET",
 
@@ -174,7 +174,7 @@ function Profile() {
 
             const response =
                 await fetch(
-                    "http://localhost:8080/api/user/profile/picture",
+                    "/api/user/profile/picture",
                     {
                         method: "POST",
 

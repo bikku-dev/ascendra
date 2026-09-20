@@ -8,6 +8,9 @@ import ascendra_backend.auth.service.AuthService;
 import ascendra_backend.user.entity.User;
 import ascendra_backend.user.repository.UserRepository;
 
+import ascendra_backend.auth.dto.ForgotPasswordRequest;
+import ascendra_backend.auth.dto.ResetPasswordRequest;
+
 import jakarta.validation.Valid;
 
 import lombok.RequiredArgsConstructor;
@@ -107,4 +110,38 @@ public class AuthController {
 
         return ResponseEntity.ok(user);
     }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(
+            @Valid @RequestBody ForgotPasswordRequest request) {
+
+        authService.forgotPassword(
+                request.getEmail()
+        );
+
+        return ResponseEntity.ok(
+                java.util.Map.of(
+                        "message",
+                        "If an account exists with this email, a password reset link has been sent."
+                )
+        );
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(
+            @Valid @RequestBody ResetPasswordRequest request) {
+
+        authService.resetPassword(
+                request.getToken(),
+                request.getNewPassword()
+        );
+
+        return ResponseEntity.ok(
+                java.util.Map.of(
+                        "message",
+                        "Password has been reset successfully."
+                )
+        );
+    }
+
 }

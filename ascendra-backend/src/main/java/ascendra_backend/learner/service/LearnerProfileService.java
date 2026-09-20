@@ -13,14 +13,20 @@ public interface LearnerProfileService {
 
     List<LearnerProfileResponse> getAllProfiles();
 
-    LearnerProfileResponse getProfileById(Long id);
+    LearnerProfileResponse getProfileById(
+            Long id
+    );
 
-    LearnerProfileResponse getProfileByUserId(Long userId);
+    LearnerProfileResponse getProfileByUserId(
+            Long userId
+    );
 
     LearnerProfileResponse updateProfile(
             Long id,
             LearnerProfileRequest request
     );
 
-    void deleteProfile(Long id);
+    void deleteProfile(
+            Long id
+    );
 }

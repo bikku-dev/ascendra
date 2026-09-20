@@ -3,7 +3,9 @@ package ascendra_backend.auth.oauth;
 import ascendra_backend.user.entity.AuthProvider;
 import ascendra_backend.user.entity.Role;
 import ascendra_backend.user.entity.User;
+import ascendra_backend.user.entity.UserSettings;
 import ascendra_backend.user.repository.UserRepository;
+import ascendra_backend.user.repository.UserSettingsRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -21,6 +23,7 @@ public class GoogleOAuth2Service
         implements OAuth2UserService<OAuth2UserRequest, OAuth2User> {
 
     private final UserRepository userRepository;
+    private final UserSettingsRepository userSettingsRepository;
 
     private final DefaultOAuth2UserService delegate =
             new DefaultOAuth2UserService();
@@ -30,7 +33,6 @@ public class GoogleOAuth2Service
     public OAuth2User loadUser(
             OAuth2UserRequest userRequest) {
 
-        // Google se user information lao
         OAuth2User googleUser =
                 delegate.loadUser(userRequest);
 
@@ -46,39 +48,86 @@ public class GoogleOAuth2Service
         String picture =
                 googleUser.getAttribute("picture");
 
-        // Required information check
-        if (email == null || providerId == null) {
+        Boolean emailVerified =
+                googleUser.getAttribute("email_verified");
+
+        if (email == null
+                || email.isBlank()
+                || providerId == null
+                || providerId.isBlank()) {
 
             throw new RuntimeException(
                     "Google account information is incomplete"
             );
         }
 
-        // Existing user
+        if (emailVerified != null
+                && !emailVerified) {
+
+            throw new RuntimeException(
+                    "Google email is not verified"
+            );
+        }
+
+        String cleanEmail =
+                email.trim().toLowerCase();
+
         User user =
-                userRepository.findByEmail(email)
-                        .orElseGet(() -> {
+                userRepository.findByEmail(cleanEmail)
+                        .orElse(null);
 
-                            // New Google user
-                            User newUser =
-                                    User.builder()
-                                            .name(
-                                                    name != null
-                                                            ? name
-                                                            : "Google User"
-                                            )
-                                            .email(email)
-                                            .password(null)
-                                            .role(Role.LEARNER)
-                                            .provider(
-                                                    AuthProvider.GOOGLE
-                                            )
-                                            .providerId(providerId)
-                                            .profilePicture(picture)
-                                            .build();
+        if (user == null) {
 
-                            return userRepository.save(newUser);
-                        });
+            user = User.builder()
+                    .name(
+                            name != null && !name.isBlank()
+                                    ? name
+                                    : "Google User"
+                    )
+                    .email(cleanEmail)
+                    .password(null)
+                    .role(Role.LEARNER)
+                    .provider(AuthProvider.GOOGLE)
+                    .providerId(providerId)
+                    .profilePicture(picture)
+                    .build();
+
+            user =
+                    userRepository.save(user);
+
+            UserSettings settings =
+                    UserSettings.builder()
+                            .userId(user.getId())
+                            .emailNotifications(true)
+                            .pushNotifications(true)
+                            .bookingNotifications(true)
+                            .messageNotifications(true)
+                            .timezone("Asia/Kolkata")
+                            .build();
+
+            userSettingsRepository.save(settings);
+
+        } else {
+
+            if (name != null && !name.isBlank()) {
+                user.setName(name);
+            }
+
+            if (picture != null && !picture.isBlank()) {
+                user.setProfilePicture(picture);
+            }
+
+            if (user.getProvider() == null) {
+                user.setProvider(AuthProvider.GOOGLE);
+            }
+
+            if (user.getProviderId() == null
+                    || user.getProviderId().isBlank()) {
+                user.setProviderId(providerId);
+            }
+
+            userRepository.save(user);
+        }
 
         return googleUser;
     }

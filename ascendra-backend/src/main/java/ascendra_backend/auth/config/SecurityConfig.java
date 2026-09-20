@@ -12,14 +12,12 @@ import org.springframework.http.HttpMethod;
 
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
-
 import org.springframework.security.config.http.SessionCreationPolicy;
-
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
 
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 
@@ -42,8 +40,13 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http) throws Exception {
 
-        http
+        SimpleUrlAuthenticationFailureHandler
+                oauthFailureHandler =
+                new SimpleUrlAuthenticationFailureHandler(
+                        "https://ascendra-bikku.duckdns.org/login?error=google_login_failed"
+                );
 
+        http
                 .csrf(csrf ->
                         csrf.disable()
                 )
@@ -85,16 +88,6 @@ public class SecurityConfig {
                         )
                         .permitAll()
 
-                        /*
-                         * WebSocket handshake endpoint.
-                         *
-                         * The browser WebSocket handshake cannot
-                         * send the JWT Authorization header in the
-                         * same way as normal REST requests.
-                         *
-                         * Authentication/authorization for chat
-                         * messages is handled by the chat layer.
-                         */
                         .requestMatchers(
                                 "/ws",
                                 "/ws/**"
@@ -125,6 +118,9 @@ public class SecurityConfig {
                                 .successHandler(
                                         oAuth2AuthenticationSuccessHandler
                                 )
+                                .failureHandler(
+                                        oauthFailureHandler
+                                )
                 )
 
                 .addFilterBefore(
@@ -144,7 +140,9 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(
                 List.of(
                         "http://localhost:5173",
-                        "http://localhost:3000"
+                        "http://localhost:3000",
+                        "http://13.232.96.225",
+                        "https://ascendra-bikku.duckdns.org"
                 )
         );
 

@@ -4,8 +4,10 @@ import ascendra_backend.booking.dto.BookingRequest;
 import ascendra_backend.booking.dto.BookingResponse;
 import ascendra_backend.booking.entity.Booking;
 import ascendra_backend.booking.entity.BookingStatus;
+import ascendra_backend.booking.exception.LearnerProfileRequiredException;
 import ascendra_backend.booking.mapper.BookingMapper;
 import ascendra_backend.booking.repository.BookingRepository;
+import ascendra_backend.expert.entity.DayOfWeek;
 import ascendra_backend.expert.entity.ExpertAvailability;
 import ascendra_backend.expert.entity.ExpertProfile;
 import ascendra_backend.expert.repository.ExpertAvailabilityRepository;
@@ -16,7 +18,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -41,8 +42,7 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public BookingResponse createBooking(
-            BookingRequest request
-    ) {
+            BookingRequest request) {
 
         if (request == null) {
             throw new IllegalArgumentException(
@@ -118,9 +118,8 @@ public class BookingServiceImpl implements BookingService {
                                     request.getLearnerId()
                             )
                             .orElseThrow(() ->
-                                    new IllegalArgumentException(
-                                            "Learner profile not found for id: "
-                                                    + request.getLearnerId()
+                                    new LearnerProfileRequiredException(
+                                            "Please complete your learner profile before booking an expert."
                                     )
                             );
         }
@@ -144,16 +143,12 @@ public class BookingServiceImpl implements BookingService {
             );
         }
 
-        DayOfWeek javaDay =
-                request.getBookingDate()
-                        .getDayOfWeek();
-
-        ascendra_backend.expert.entity.DayOfWeek
-                expertDay =
-                ascendra_backend.expert.entity.DayOfWeek
-                        .valueOf(
-                                javaDay.name()
-                        );
+        DayOfWeek expertDay =
+                DayOfWeek.valueOf(
+                        request.getBookingDate()
+                                .getDayOfWeek()
+                                .name()
+                );
 
         List<ExpertAvailability> availabilitySlots =
                 availabilityRepository
@@ -164,14 +159,11 @@ public class BookingServiceImpl implements BookingService {
         boolean insideExpertAvailability =
                 availabilitySlots.stream()
                         .anyMatch(slot ->
-
                                 slot.getDayOfWeek()
                                         == expertDay
-
                                         && !startTime.isBefore(
                                         slot.getStartTime()
                                 )
-
                                         && !endTime.isAfter(
                                         slot.getEndTime()
                                 )
@@ -229,8 +221,7 @@ public class BookingServiceImpl implements BookingService {
     @Override
     @Transactional(readOnly = true)
     public BookingResponse getBookingById(
-            Long id
-    ) {
+            Long id) {
 
         Booking booking =
                 bookingRepository.findById(id)
@@ -247,8 +238,7 @@ public class BookingServiceImpl implements BookingService {
     @Override
     @Transactional(readOnly = true)
     public List<BookingResponse> getLearnerBookings(
-            Long learnerId
-    ) {
+            Long learnerId) {
 
         if (learnerId == null) {
             throw new IllegalArgumentException(
@@ -266,9 +256,8 @@ public class BookingServiceImpl implements BookingService {
                     learnerRepository
                             .findByUserId(learnerId)
                             .orElseThrow(() ->
-                                    new IllegalArgumentException(
-                                            "Learner profile not found for id: "
-                                                    + learnerId
+                                    new LearnerProfileRequiredException(
+                                            "Please complete your learner profile before viewing your bookings."
                                     )
                             );
         }
@@ -285,8 +274,7 @@ public class BookingServiceImpl implements BookingService {
     @Override
     @Transactional(readOnly = true)
     public List<BookingResponse> getExpertBookings(
-            Long expertId
-    ) {
+            Long expertId) {
 
         if (!expertRepository.existsById(expertId)) {
             throw new IllegalArgumentException(
@@ -304,8 +292,7 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public BookingResponse cancelBooking(
-            Long id
-    ) {
+            Long id) {
 
         Booking booking =
                 bookingRepository.findById(id)

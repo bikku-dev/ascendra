@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import gsap from "gsap";
+
 import {
     ArrowRight,
     CheckCircle2,
@@ -11,13 +12,13 @@ import {
     ShieldCheck,
     Sparkles,
     User,
-    Users,
+    Users
 } from "lucide-react";
 
 import {
     registerUser,
     loginUser,
-    getToken,
+    getToken
 } from "../service/authService";
 
 import ThemeToggle from "../components/ThemeToggle";
@@ -34,15 +35,18 @@ function Register() {
 
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
+
     const [error, setError] = useState("");
+    const [success, setSuccess] = useState("");
 
     useEffect(() => {
         const ctx = gsap.context(() => {
+
             gsap.from(".auth-logo", {
                 y: -15,
                 opacity: 0,
                 duration: 0.7,
-                ease: "power3.out",
+                ease: "power3.out"
             });
 
             gsap.from(".auth-hero-content", {
@@ -50,7 +54,7 @@ function Register() {
                 opacity: 0,
                 duration: 0.9,
                 delay: 0.1,
-                ease: "power3.out",
+                ease: "power3.out"
             });
 
             gsap.from(".auth-card", {
@@ -58,7 +62,7 @@ function Register() {
                 opacity: 0,
                 duration: 0.9,
                 delay: 0.2,
-                ease: "power3.out",
+                ease: "power3.out"
             });
 
             gsap.from(".register-benefit-card", {
@@ -67,8 +71,9 @@ function Register() {
                 duration: 0.7,
                 delay: 0.45,
                 stagger: 0.12,
-                ease: "power3.out",
+                ease: "power3.out"
             });
+
         }, containerRef);
 
         return () => ctx.revert();
@@ -82,17 +87,29 @@ function Register() {
         }
 
         setError("");
+        setSuccess("");
 
         const cleanName = name.trim();
-        const cleanEmail = email.trim();
+        const cleanEmail = email.trim().toLowerCase();
 
         if (!cleanName || !cleanEmail || !password) {
-            setError("Please fill all fields.");
+            setError(
+                "Please fill in all required fields."
+            );
+            return;
+        }
+
+        if (cleanName.length < 2) {
+            setError(
+                "Please enter a valid full name."
+            );
             return;
         }
 
         if (password.length < 8) {
-            setError("Password must be at least 8 characters.");
+            setError(
+                "Password must be at least 8 characters."
+            );
             return;
         }
 
@@ -118,13 +135,22 @@ function Register() {
 
             if (!token) {
                 throw new Error(
-                    "Account created, but login could not be completed."
+                    "Account created, but automatic login could not be completed. Please sign in manually."
                 );
             }
 
-            navigate("/learner", {
-                replace: true,
-            });
+            setSuccess(
+                "Account created successfully. Redirecting..."
+            );
+
+            setTimeout(() => {
+                navigate(
+                    "/learner",
+                    {
+                        replace: true
+                    }
+                );
+            }, 500);
 
         } catch (err) {
             console.error(
@@ -132,30 +158,85 @@ function Register() {
                 err
             );
 
+            const status =
+                err?.response?.status;
+
             const backendMessage =
                 err?.response?.data?.message;
 
             const backendError =
                 err?.response?.data?.error;
 
-            if (err?.response?.status === 409) {
+            /*
+             * Duplicate email
+             */
+            if (status === 409) {
+
                 setError(
                     backendMessage ||
-                    "An account with this email already exists."
+                    "This email is already registered. Please sign in or use a different email."
                 );
-            } else if (err?.response?.status === 400) {
+
+                return;
+            }
+
+            /*
+             * Some backends may currently return
+             * 400 for duplicate validation.
+             */
+            if (
+                status === 400 &&
+                (
+                    backendMessage
+                        ?.toLowerCase()
+                        ?.includes("already") ||
+                    backendMessage
+                        ?.toLowerCase()
+                        ?.includes("registered")
+                )
+            ) {
+
+                setError(
+                    "This email is already registered. Please sign in or use a different email."
+                );
+
+                return;
+            }
+
+            /*
+             * Validation error
+             */
+            if (status === 400) {
+
                 setError(
                     backendMessage ||
                     "Please check the information you entered."
                 );
-            } else {
-                setError(
-                    backendMessage ||
-                    backendError ||
-                    err?.message ||
-                    "Unable to create account. Please try again."
-                );
+
+                return;
             }
+
+            /*
+             * Server error
+             */
+            if (status >= 500) {
+
+                setError(
+                    "We couldn't create your account right now. Please try again in a moment."
+                );
+
+                return;
+            }
+
+            /*
+             * Network / unknown error
+             */
+            setError(
+                backendMessage ||
+                backendError ||
+                err?.message ||
+                "Unable to create your account. Please try again."
+            );
 
         } finally {
             setLoading(false);
@@ -167,6 +248,8 @@ function Register() {
             className="auth-page"
             ref={containerRef}
         >
+
+            {/* Background */}
 
             <div className="auth-background">
 
@@ -183,6 +266,8 @@ function Register() {
                 <div className="auth-glow auth-glow-two" />
 
             </div>
+
+            {/* Header */}
 
             <header className="auth-topbar">
 
@@ -215,16 +300,24 @@ function Register() {
                         to="/login"
                         className="top-auth-link"
                     >
+
                         Sign in
 
-                        <ArrowRight size={16} />
+                        <ArrowRight
+                            size={16}
+                        />
+
                     </Link>
 
                 </div>
 
             </header>
 
+            {/* Main */}
+
             <main className="auth-layout">
+
+                {/* Left */}
 
                 <section className="auth-hero">
 
@@ -233,7 +326,9 @@ function Register() {
                         <div className="auth-eyebrow">
 
                             <span className="eyebrow-icon">
-                                <Sparkles size={15} />
+                                <Sparkles
+                                    size={15}
+                                />
                             </span>
 
                             START YOUR JOURNEY
@@ -259,9 +354,11 @@ function Register() {
                         </h1>
 
                         <p className="auth-hero-description">
-                            Create your Ascendra account and
-                            start learning from people who have
-                            already walked the path.
+
+                            Create your Ascendra account
+                            and start learning from people
+                            who have already walked the path.
+
                         </p>
 
                         <div className="register-steps">
@@ -299,7 +396,8 @@ function Register() {
                                     </strong>
 
                                     <span>
-                                        Connect with experienced professionals
+                                        Connect with experienced
+                                        professionals
                                     </span>
 
                                 </div>
@@ -319,7 +417,8 @@ function Register() {
                                     </strong>
 
                                     <span>
-                                        Learn through focused sessions
+                                        Learn through focused
+                                        sessions
                                     </span>
 
                                 </div>
@@ -329,6 +428,8 @@ function Register() {
                         </div>
 
                     </div>
+
+                    {/* Benefits */}
 
                     <div className="register-benefit-grid">
 
@@ -370,6 +471,8 @@ function Register() {
 
                 </section>
 
+                {/* Right */}
+
                 <section className="auth-form-section">
 
                     <div className="auth-card register-card">
@@ -395,6 +498,8 @@ function Register() {
 
                         </div>
 
+                        {/* Error */}
+
                         {error && (
                             <div className="auth-error">
 
@@ -407,10 +512,40 @@ function Register() {
                             </div>
                         )}
 
+                        {/* Success */}
+
+                        {success && (
+                            <div
+                                className="auth-success"
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "10px",
+                                    padding: "12px 14px",
+                                    marginBottom: "18px",
+                                    borderRadius: "12px"
+                                }}
+                            >
+
+                                <CheckCircle2
+                                    size={18}
+                                />
+
+                                <span>
+                                    {success}
+                                </span>
+
+                            </div>
+                        )}
+
+                        {/* Form */}
+
                         <form
                             className="auth-form"
                             onSubmit={handleSubmit}
                         >
+
+                            {/* Name */}
 
                             <div className="auth-field">
 
@@ -420,7 +555,9 @@ function Register() {
 
                                 <div className="auth-input">
 
-                                    <User size={18} />
+                                    <User
+                                        size={18}
+                                    />
 
                                     <input
                                         id="register-name"
@@ -440,6 +577,8 @@ function Register() {
 
                             </div>
 
+                            {/* Email */}
+
                             <div className="auth-field">
 
                                 <label htmlFor="register-email">
@@ -448,7 +587,9 @@ function Register() {
 
                                 <div className="auth-input">
 
-                                    <Mail size={18} />
+                                    <Mail
+                                        size={18}
+                                    />
 
                                     <input
                                         id="register-email"
@@ -468,6 +609,8 @@ function Register() {
 
                             </div>
 
+                            {/* Password */}
+
                             <div className="auth-field">
 
                                 <div className="auth-label-row">
@@ -484,7 +627,9 @@ function Register() {
 
                                 <div className="auth-input">
 
-                                    <Lock size={18} />
+                                    <Lock
+                                        size={18}
+                                    />
 
                                     <input
                                         id="register-password"
@@ -513,17 +658,30 @@ function Register() {
                                                 !showPassword
                                             )
                                         }
+                                        aria-label={
+                                            showPassword
+                                                ? "Hide password"
+                                                : "Show password"
+                                        }
                                     >
+
                                         {showPassword ? (
-                                            <EyeOff size={18} />
+                                            <EyeOff
+                                                size={18}
+                                            />
                                         ) : (
-                                            <Eye size={18} />
+                                            <Eye
+                                                size={18}
+                                            />
                                         )}
+
                                     </button>
 
                                 </div>
 
                             </div>
+
+                            {/* Password quality */}
 
                             <div className="password-quality">
 
@@ -564,14 +722,19 @@ function Register() {
                                 </div>
 
                                 <span>
+
                                     {password.length === 0
                                         ? "Use at least 8 characters"
                                         : password.length < 8
                                             ? `${password.length}/8 characters`
-                                            : "Password looks good"}
+                                            : "Password looks good"
+                                    }
+
                                 </span>
 
                             </div>
+
+                            {/* Submit */}
 
                             <button
                                 type="submit"
@@ -580,24 +743,39 @@ function Register() {
                             >
 
                                 <span>
+
                                     {loading
                                         ? "Creating account..."
-                                        : "Create account"}
+                                        : "Create account"
+                                    }
+
                                 </span>
 
                                 {!loading && (
                                     <span className="button-arrow">
-                                        <ArrowRight size={18} />
+
+                                        <ArrowRight
+                                            size={18}
+                                        />
+
                                     </span>
+                                )}
+
+                                {loading && (
+                                    <span className="auth-spinner" />
                                 )}
 
                             </button>
 
                         </form>
 
+                        {/* Security */}
+
                         <div className="auth-security">
 
-                            <ShieldCheck size={15} />
+                            <ShieldCheck
+                                size={15}
+                            />
 
                             <span>
                                 Your information is securely
@@ -605,6 +783,8 @@ function Register() {
                             </span>
 
                         </div>
+
+                        {/* Login */}
 
                         <p className="auth-bottom-text">
 
@@ -621,6 +801,8 @@ function Register() {
                 </section>
 
             </main>
+
+            {/* Footer */}
 
             <footer className="auth-footer">
 

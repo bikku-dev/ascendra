@@ -7,7 +7,7 @@ import {
 } from "../../service/authService";
 
 const API_URL =
-    "http://localhost:8080/api";
+    "/api";
 
 
 function LearnerEntry() {

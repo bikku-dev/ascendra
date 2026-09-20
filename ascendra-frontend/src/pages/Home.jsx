@@ -326,6 +326,17 @@ function Home() {
     };
 
     useEffect(() => {
+        if (!mobileMenuOpen) return;
+
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+
+        return () => {
+            document.body.style.overflow = previousOverflow;
+        };
+    }, [mobileMenuOpen]);
+
+    useEffect(() => {
         if (!expertModalOpen) return;
 
         document.body.classList.add("expert-modal-open");
@@ -503,6 +514,15 @@ function Home() {
                         <strong>Ascendra</strong>
                     </Link>
 
+                    {mobileMenuOpen && (
+                        <button
+                            type="button"
+                            className="mobile-nav-backdrop"
+                            aria-label="Close navigation menu"
+                            onClick={() => setMobileMenuOpen(false)}
+                        />
+                    )}
+
                     <nav className={`home-nav ${mobileMenuOpen ? "home-nav-open" : ""}`}>
                         <a href="#how" onClick={() => setMobileMenuOpen(false)}>How it works</a>
                         <a href="#mentors" onClick={() => setMobileMenuOpen(false)}>Mentors</a>
@@ -547,7 +567,7 @@ function Home() {
 
                         <button
                             type="button"
-                            className="mobile-menu-button"
+                            className={`mobile-menu-button ${mobileMenuOpen ? "is-open" : ""}`}
                             aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
                             aria-expanded={mobileMenuOpen}
                             onClick={() => setMobileMenuOpen((current) => !current)}

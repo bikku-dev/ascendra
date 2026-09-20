@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
     useNavigate,
     useSearchParams,
@@ -10,27 +10,84 @@ function OAuthSuccess() {
 
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
+    const [error, setError] = useState("");
 
     useEffect(() => {
 
-        const token = searchParams.get("token");
+        const token =
+            searchParams.get("token");
 
-        if (!token) {
-            navigate("/login", {
-                replace: true,
-            });
+        const oauthError =
+            searchParams.get("error");
+
+        if (oauthError) {
+            setError(
+                "Google login failed. Please try again."
+            );
+
+            setTimeout(() => {
+                navigate("/login", {
+                    replace: true,
+                });
+            }, 1500);
+
             return;
         }
 
-        // JWT save karo
-        saveToken(token);
+        if (!token) {
+            setError(
+                "Authentication failed. Please try again."
+            );
 
-        // Google login ke baad bhi directly learner website
-        navigate("/learner", {
-            replace: true,
-        });
+            setTimeout(() => {
+                navigate("/login", {
+                    replace: true,
+                });
+            }, 1500);
+
+            return;
+        }
+
+        try {
+
+            saveToken(token);
+
+            navigate("/learner", {
+                replace: true,
+            });
+
+        } catch (error) {
+
+            setError(
+                "Unable to complete Google login."
+            );
+
+            setTimeout(() => {
+                navigate("/login", {
+                    replace: true,
+                });
+            }, 1500);
+        }
 
     }, [navigate, searchParams]);
+
+    if (error) {
+        return (
+            <div className="oauth-loading">
+                <div className="loading-logo">
+                    A
+                </div>
+
+                <h2>
+                    {error}
+                </h2>
+
+                <p>
+                    Redirecting you to login...
+                </p>
+            </div>
+        );
+    }
 
     return (
         <div className="oauth-loading">
@@ -41,7 +98,9 @@ function OAuthSuccess() {
 
             <div className="loading-spinner" />
 
-            <h2>Signing you in...</h2>
+            <h2>
+                Signing you in...
+            </h2>
 
             <p>
                 Please wait while we take you to your learning space.

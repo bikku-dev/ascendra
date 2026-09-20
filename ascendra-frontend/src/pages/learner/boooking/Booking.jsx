@@ -890,6 +890,11 @@ function Booking() {
     ] = useState("");
 
     const [
+        profileRequired,
+        setProfileRequired
+    ] = useState(false);
+
+    const [
         step,
         setStep
     ] = useState(1);
@@ -1630,20 +1635,32 @@ function Booking() {
 
                 razorpay.open();
             } catch (err) {
-                setError(
-                    err?.response
-                        ?.data
-                        ?.message ||
-                    err?.response
-                        ?.data
-                        ?.error ||
-                    err?.message ||
-                    "Unable to create the booking."
-                );
+                const requiresProfile =
+                    err?.code ===
+                        "LEARNER_PROFILE_REQUIRED" ||
+                    (
+                        err?.response?.status === 409 &&
+                        err?.response?.data?.error ===
+                            "LEARNER_PROFILE_REQUIRED"
+                    );
 
-                setSubmitting(
-                    false
-                );
+                if (requiresProfile) {
+                    setProfileRequired(true);
+                    setError("");
+                } else {
+                    setError(
+                        err?.response
+                            ?.data
+                            ?.message ||
+                        err?.response
+                            ?.data
+                            ?.error ||
+                        err?.message ||
+                        "Unable to create the booking."
+                    );
+                }
+
+                setSubmitting(false);
             }
         };
 
@@ -2650,6 +2667,74 @@ function Booking() {
                 </div>
 
             </div>
+
+            {profileRequired && (
+                <div
+                    className="booking-profile-modal-overlay"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="booking-profile-modal-title"
+                    onClick={() =>
+                        setProfileRequired(false)
+                    }
+                >
+                    <div
+                        className="booking-profile-modal"
+                        onClick={event =>
+                            event.stopPropagation()
+                        }
+                    >
+                        <button
+                            type="button"
+                            className="booking-profile-modal-close"
+                            onClick={() =>
+                                setProfileRequired(false)
+                            }
+                            aria-label="Close"
+                        >
+                            <X size={18} />
+                        </button>
+
+                        <div className="booking-profile-modal-icon">
+                            <UserRound size={25} />
+                        </div>
+
+                        <h2 id="booking-profile-modal-title">
+                            Complete your profile
+                        </h2>
+
+                        <p>
+                            Before booking an expert, please complete
+                            your learner profile. It only takes a moment
+                            and helps your expert understand your goals.
+                        </p>
+
+                        <div className="booking-profile-modal-actions">
+                            <button
+                                type="button"
+                                className="booking-profile-modal-cancel"
+                                onClick={() =>
+                                    setProfileRequired(false)
+                                }
+                            >
+                                Cancel
+                            </button>
+
+                            <button
+                                type="button"
+                                className="booking-profile-modal-primary"
+                                onClick={() => {
+                                    setProfileRequired(false);
+                                    navigate("/learner/profile");
+                                }}
+                            >
+                                Complete Profile
+                                <ArrowRight size={17} />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

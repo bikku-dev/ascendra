@@ -1,13 +1,5 @@
 import { authApi } from "./authService";
 
-/*
- * Learner API
- * -------------------------------
- * All learner profile, skill and goal
- * requests go through the existing
- * authenticated axios instance.
- */
-
 export const createLearnerProfile = async (data) => {
     const response = await authApi.post(
         "/api/learners",
@@ -41,7 +33,10 @@ export const getLearnerProfileByUserId = async (userId) => {
     return response.data;
 };
 
-export const updateLearnerProfile = async (id, data) => {
+export const updateLearnerProfile = async (
+    id,
+    data
+) => {
     const response = await authApi.put(
         `/api/learners/${id}`,
         data
@@ -57,11 +52,6 @@ export const deleteLearnerProfile = async (id) => {
 
     return response.data;
 };
-
-
-/* =========================================================
-   SKILLS
-========================================================= */
 
 export const getAllSkills = async () => {
     const response = await authApi.get(
@@ -113,11 +103,6 @@ export const deleteLearnerSkill = async (id) => {
     return response.data;
 };
 
-
-/* =========================================================
-   GOALS
-========================================================= */
-
 export const createGoal = async (data) => {
     const response = await authApi.post(
         "/api/goals",
@@ -143,7 +128,10 @@ export const getGoal = async (id) => {
     return response.data;
 };
 
-export const updateGoal = async (id, data) => {
+export const updateGoal = async (
+    id,
+    data
+) => {
     const response = await authApi.put(
         `/api/goals/${id}`,
         data

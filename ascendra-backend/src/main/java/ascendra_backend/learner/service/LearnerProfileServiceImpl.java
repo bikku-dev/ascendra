@@ -28,11 +28,6 @@ public class LearnerProfileServiceImpl
     private final UserRepository userRepository;
     private final LearnerProfileMapper profileMapper;
 
-
-    // =========================================================
-    // CREATE
-    // =========================================================
-
     @Override
     public LearnerProfileResponse createProfile(
             LearnerProfileRequest request) {
@@ -67,7 +62,6 @@ public class LearnerProfileServiceImpl
             );
         }
 
-
         User user =
                 userRepository.findById(
                         request.getUserId()
@@ -79,32 +73,26 @@ public class LearnerProfileServiceImpl
                         )
                 );
 
-
         if (user.getRole() != Role.LEARNER) {
-
             throw new ResponseStatusException(
                     HttpStatus.FORBIDDEN,
                     "Only LEARNER users can create learner profile"
             );
         }
 
-
         if (profileRepository.existsByUserId(
                 request.getUserId()
         )) {
-
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
                     "Learner profile already exists"
             );
         }
 
-
         String bio =
                 request.getBio() == null
                         ? null
                         : request.getBio().trim();
-
 
         LearnerProfile profile =
                 LearnerProfile.builder()
@@ -118,18 +106,11 @@ public class LearnerProfileServiceImpl
                         .bio(bio)
                         .build();
 
-
         LearnerProfile saved =
                 profileRepository.save(profile);
 
-
         return profileMapper.toResponse(saved);
     }
-
-
-    // =========================================================
-    // GET ALL
-    // =========================================================
 
     @Override
     @Transactional(readOnly = true)
@@ -140,11 +121,6 @@ public class LearnerProfileServiceImpl
                 .map(profileMapper::toResponse)
                 .toList();
     }
-
-
-    // =========================================================
-    // GET BY ID
-    // =========================================================
 
     @Override
     @Transactional(readOnly = true)
@@ -164,38 +140,55 @@ public class LearnerProfileServiceImpl
         return profileMapper.toResponse(profile);
     }
 
-
-    // =========================================================
-    // GET BY USER ID
-    // =========================================================
-
     @Override
     @Transactional(readOnly = true)
     public LearnerProfileResponse getProfileByUserId(
             Long userId) {
 
-        LearnerProfile profile =
-                profileRepository.findByUserId(userId)
-                        .orElseThrow(() ->
-                                new ResponseStatusException(
-                                        HttpStatus.NOT_FOUND,
-                                        "Learner profile not found for user: "
-                                                + userId
-                                )
-                        );
+        if (userId == null) {
+            return null;
+        }
 
-        return profileMapper.toResponse(profile);
+        return profileRepository
+                .findByUserId(userId)
+                .map(profileMapper::toResponse)
+                .orElse(null);
     }
-
-
-    // =========================================================
-    // UPDATE
-    // =========================================================
 
     @Override
     public LearnerProfileResponse updateProfile(
             Long id,
             LearnerProfileRequest request) {
+
+        if (request == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Profile request is required"
+            );
+        }
+
+        if (request.getUserId() == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "User ID is required"
+            );
+        }
+
+        if (request.getExperienceLevel() == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Experience level is required"
+            );
+        }
+
+        if (request.getTargetRole() == null ||
+                request.getTargetRole().trim().isEmpty()) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Target role is required"
+            );
+        }
 
         LearnerProfile profile =
                 profileRepository.findById(id)
@@ -206,7 +199,6 @@ public class LearnerProfileServiceImpl
                                                 + id
                                 )
                         );
-
 
         User user =
                 userRepository.findById(
@@ -219,15 +211,12 @@ public class LearnerProfileServiceImpl
                         )
                 );
 
-
         if (user.getRole() != Role.LEARNER) {
-
             throw new ResponseStatusException(
                     HttpStatus.FORBIDDEN,
                     "User must have LEARNER role"
             );
         }
-
 
         profile.setUser(user);
 
@@ -245,22 +234,15 @@ public class LearnerProfileServiceImpl
                         : request.getBio().trim()
         );
 
-
         return profileMapper.toResponse(
                 profileRepository.save(profile)
         );
     }
 
-
-    // =========================================================
-    // DELETE
-    // =========================================================
-
     @Override
     public void deleteProfile(Long id) {
 
         if (!profileRepository.existsById(id)) {
-
             throw new ResponseStatusException(
                     HttpStatus.NOT_FOUND,
                     "Learner profile not found: " + id

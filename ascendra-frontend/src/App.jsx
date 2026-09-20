@@ -11,6 +11,9 @@ import Login from "./pages/Login";
 import Register from "./pages/register";
 import OAuthSuccess from "./pages/oAuthSuccess";
 
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+
 import LearnerHome from "./pages/LearnerHome";
 import Profile from "./pages/profile";
 import LearnerOnboarding from "./pages/learner/LearnerOnboarding";
@@ -41,8 +44,7 @@ const getCurrentUser = () => {
     ];
 
     for (const key of keys) {
-        const value =
-            localStorage.getItem(key);
+        const value = localStorage.getItem(key);
 
         if (!value) {
             continue;
@@ -58,9 +60,7 @@ const getCurrentUser = () => {
     return null;
 };
 
-function ProtectedRoute({
-    children
-}) {
+function ProtectedRoute({ children }) {
     const token = getToken();
     const user = getCurrentUser();
 
@@ -82,6 +82,8 @@ function App() {
             <BrowserRouter>
                 <Routes>
 
+                    {/* Public Routes */}
+
                     <Route
                         path="/"
                         element={<Home />}
@@ -101,6 +103,22 @@ function App() {
                         path="/oauth-success"
                         element={<OAuthSuccess />}
                     />
+
+                    {/* Forgot Password */}
+
+                    <Route
+                        path="/forgot-password"
+                        element={<ForgotPassword />}
+                    />
+
+                    {/* Reset Password */}
+
+                    <Route
+                        path="/reset-password"
+                        element={<ResetPassword />}
+                    />
+
+                    {/* Learner Routes */}
 
                     <Route
                         path="/learner"
@@ -191,6 +209,8 @@ function App() {
                             </ProtectedRoute>
                         }
                     />
+
+                    {/* Fallback */}
 
                     <Route
                         path="*"

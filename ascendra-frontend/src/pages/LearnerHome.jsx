@@ -370,11 +370,18 @@ function LearnerHome() {
             );
 
             const userId =
-                storedUser.userId ||
-                storedUser.id ||
-                storedUser.user_id;
+                storedUser?.userId ??
+                storedUser?.id ??
+                storedUser?.user_id ??
+                storedUser?.user?.id ??
+                storedUser?.user?.userId;
 
             if (!userId) {
+                setProfile(null);
+                setSkills([]);
+                setGoals([]);
+                setSessions([]);
+                setSessionsError("");
                 setLoading(false);
                 return;
             }
@@ -391,10 +398,20 @@ function LearnerHome() {
                             userId
                         );
                 } catch (profileError) {
-                    if (
-                        profileError?.response?.status !==
-                        404
-                    ) {
+                    const status =
+                        profileError?.response?.status;
+
+                    /*
+                     * A user account can exist before the learner
+                     * profile is created. A 404 therefore means
+                     * "profile not created yet", not "dashboard broken".
+                     */
+                    if (status === 404) {
+                        console.warn(
+                            `Learner profile not found for user ${userId}.`
+                        );
+                        learnerProfile = null;
+                    } else {
                         throw profileError;
                     }
                 }
@@ -408,10 +425,10 @@ function LearnerHome() {
                     learnerProfile?.id
                 ) {
                     const [
-                        skillsData,
-                        goalsData
+                        skillsResult,
+                        goalsResult
                     ] =
-                        await Promise.all([
+                        await Promise.allSettled([
                             getLearnerSkills(
                                 learnerProfile.id
                             ),
@@ -420,12 +437,48 @@ function LearnerHome() {
                             )
                         ]);
 
+                    const skillsData =
+                        skillsResult.status ===
+                        "fulfilled"
+                            ? skillsResult.value
+                            : [];
+
+                    const goalsData =
+                        goalsResult.status ===
+                        "fulfilled"
+                            ? goalsResult.value
+                            : [];
+
+                    if (
+                        skillsResult.status ===
+                        "rejected"
+                    ) {
+                        console.error(
+                            "Learner skills error:",
+                            skillsResult.reason
+                        );
+                    }
+
+                    if (
+                        goalsResult.status ===
+                        "rejected"
+                    ) {
+                        console.error(
+                            "Learner goals error:",
+                            goalsResult.reason
+                        );
+                    }
+
                     setSkills(
                         Array.isArray(
                             skillsData
                         )
                             ? skillsData
-                            : []
+                            : Array.isArray(
+                                skillsData?.data
+                            )
+                                ? skillsData.data
+                                : []
                     );
 
                     setGoals(
@@ -433,7 +486,11 @@ function LearnerHome() {
                             goalsData
                         )
                             ? goalsData
-                            : []
+                            : Array.isArray(
+                                goalsData?.data
+                            )
+                                ? goalsData.data
+                                : []
                     );
 
                     try {
@@ -493,6 +550,8 @@ function LearnerHome() {
                 setProfile(null);
                 setSkills([]);
                 setGoals([]);
+                setSessions([]);
+                setSessionsError("");
             } finally {
                 setLoading(false);
             }
@@ -1847,9 +1906,17 @@ function DashboardView({
                             <span className="eyebrow-dot" />
                             LEARNER WORKSPACE
                         </span>
-                        <span className="hero-status-pill">
+                        <span
+                            className={`hero-status-pill ${
+                                profile?.id
+                                    ? ""
+                                    : "profile-status-missing"
+                            }`}
+                        >
                             <span />
-                            Profile active
+                            {profile?.id
+                                ? "Profile active"
+                                : "Profile setup needed"}
                         </span>
                     </div>
 
@@ -1871,19 +1938,31 @@ function DashboardView({
                         <button
                             type="button"
                             className="button button-primary"
-                            onClick={() => navigateView("experts")}
+                            onClick={() =>
+                                navigateView(
+                                    profile?.id
+                                        ? "experts"
+                                        : "profile"
+                                )
+                            }
                         >
-                            Find an expert
+                            {profile?.id
+                                ? "Find an expert"
+                                : "Complete profile"}
                             <ArrowRight size={17} />
                         </button>
 
                         <button
                             type="button"
                             className="button button-ghost"
-                            onClick={() => navigateView("profile")}
+                            onClick={() =>
+                                navigateView("profile")
+                            }
                         >
                             <Pencil size={16} />
-                            Update profile
+                            {profile?.id
+                                ? "Update profile"
+                                : "Open profile"}
                         </button>
                     </div>
                 </div>
@@ -1938,6 +2017,37 @@ function DashboardView({
                 </div>
                 <span className="dashboard-updated">Live workspace data</span>
             </section>
+
+            {!profile?.id && (
+                <section className="profile-setup-notice ui-animate">
+                    <div className="profile-setup-icon">
+                        <UserRound size={22} />
+                    </div>
+
+                    <div className="profile-setup-copy">
+                        <span className="card-eyebrow">
+                            FIRST STEP
+                        </span>
+                        <h2>Complete your learner profile</h2>
+                        <p>
+                            Your account is ready, but a learner profile has
+                            not been created yet. Add your experience, target
+                            role, skills and goals before booking a mentor.
+                        </p>
+                    </div>
+
+                    <button
+                        type="button"
+                        className="button button-primary compact-button"
+                        onClick={() =>
+                            navigateView("profile")
+                        }
+                    >
+                        Complete profile
+                        <ArrowRight size={16} />
+                    </button>
+                </section>
+            )}
 
             <section className="stats-grid">
                 <StatCard

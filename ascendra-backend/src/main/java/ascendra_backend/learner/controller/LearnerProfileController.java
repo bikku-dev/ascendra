@@ -22,7 +22,6 @@ public class LearnerProfileController {
 
     private final LearnerProfileService learnerProfileService;
 
-
     @PostMapping
     public ResponseEntity<LearnerProfileResponse> createProfile(
             @Valid @RequestBody LearnerProfileRequest request) {
@@ -43,7 +42,6 @@ public class LearnerProfileController {
         );
     }
 
-
     @GetMapping("/{id}")
     public ResponseEntity<LearnerProfileResponse> getProfileById(
             @PathVariable Long id) {
@@ -53,16 +51,21 @@ public class LearnerProfileController {
         );
     }
 
-
     @GetMapping("/user/{userId}")
     public ResponseEntity<LearnerProfileResponse> getProfileByUserId(
             @PathVariable Long userId) {
 
-        return ResponseEntity.ok(
-                learnerProfileService.getProfileByUserId(userId)
-        );
-    }
+        LearnerProfileResponse response =
+                learnerProfileService.getProfileByUserId(userId);
 
+        if (response == null) {
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .build();
+        }
+
+        return ResponseEntity.ok(response);
+    }
 
     @PutMapping("/{id}")
     public ResponseEntity<LearnerProfileResponse> updateProfile(

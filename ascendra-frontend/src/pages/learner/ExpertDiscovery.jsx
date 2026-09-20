@@ -38,6 +38,14 @@ import {
     getAllExperts
 } from "../../service/expertService";
 
+import {
+    getUser
+} from "../../service/authService";
+
+import {
+    getLearnerProfileByUserId
+} from "../../service/learnerService";
+
 import "./ExpertDiscovery.css";
 
 const CATEGORY_CONFIG = [
@@ -519,7 +527,8 @@ const matchesCategory = (
 const ExpertCard = ({
     expert,
     onViewProfile,
-    onBook
+    onBook,
+    bookingCheckLoading
 }) => {
     const name =
         getExpertName(expert);
@@ -678,9 +687,14 @@ const ExpertCard = ({
                                 expert
                             )
                         }
+                        disabled={bookingCheckLoading}
                     >
-                        Book session
-                        <ArrowRight size={16} />
+                        {bookingCheckLoading
+                            ? "Checking..."
+                            : "Book session"}
+                        {!bookingCheckLoading && (
+                            <ArrowRight size={16} />
+                        )}
                     </button>
                 </div>
             </div>
@@ -763,7 +777,8 @@ const getExpertAvailability = expert =>
 const ExpertProfileModal = ({
     expert,
     onClose,
-    onBook
+    onBook,
+    bookingCheckLoading
 }) => {
     useEffect(() => {
         if (!expert) {
@@ -1151,9 +1166,14 @@ const ExpertProfileModal = ({
                                     onClose();
                                     onBook(expert);
                                 }}
+                                disabled={bookingCheckLoading}
                             >
-                                Book a session
-                                <ArrowRight size={16} />
+                                {bookingCheckLoading
+                                    ? "Checking..."
+                                    : "Book a session"}
+                                {!bookingCheckLoading && (
+                                    <ArrowRight size={16} />
+                                )}
                             </button>
 
                             <small className="expert-profile-book-note">
@@ -1187,6 +1207,16 @@ const ExpertDiscovery = () => {
         error,
         setError
     ] = useState("");
+
+    const [
+        profileRequired,
+        setProfileRequired
+    ] = useState(false);
+
+    const [
+        profileChecking,
+        setProfileChecking
+    ] = useState(false);
 
     const [
         selectedCategory,
@@ -1562,18 +1592,151 @@ const ExpertDiscovery = () => {
         };
 
     const handleBook =
-        expert => {
+        async expert => {
             const id =
                 getExpertId(expert);
 
-            if (!id) {
+            if (!id || profileChecking) {
                 return;
             }
 
-            navigate(
-                `/learner/booking/${id}`
+            const user =
+                getUser();
+
+            const userId =
+                user?.id ??
+                user?.userId ??
+                user?.user_id ??
+                user?.user?.id ??
+                user?.user?.userId;
+
+            if (!userId) {
+                navigate("/login");
+                return;
+            }
+
+            try {
+                setProfileChecking(true);
+                setProfileRequired(false);
+                setError("");
+
+                const profile =
+                    await getLearnerProfileByUserId(
+                        userId
+                    );
+
+                /*
+                 * If the service returns no profile data,
+                 * treat it as "profile not completed".
+                 */
+                const profileData =
+                    profile?.data ??
+                    profile?.profile ??
+                    profile;
+
+                if (
+                    profileData === null ||
+                    profileData === undefined ||
+                    profileData === ""
+                ) {
+                    setProfileRequired(true);
+                    return;
+                }
+
+                // Profile exists -> continue to booking.
+                navigate(
+                    `/learner/booking/${id}`
+                );
+
+            } catch (err) {
+                console.error(
+                    "Learner profile check failed:",
+                    err
+                );
+
+                const status =
+                    err?.response?.status;
+
+                const responseData =
+                    err?.response?.data;
+
+                const responseMessage =
+                    String(
+                        responseData?.message ??
+                        responseData?.error ??
+                        responseData ??
+                        err?.message ??
+                        ""
+                    ).toLowerCase();
+
+                /*
+                 * A missing profile is normally 404.
+                 * Also handle common backend messages so the
+                 * user gets the profile-required modal instead
+                 * of the generic "Something went wrong" state.
+                 */
+                const profileNotFound =
+                    status === 404 ||
+                    responseMessage.includes(
+                        "profile not found"
+                    ) ||
+                    responseMessage.includes(
+                        "learner profile not found"
+                    ) ||
+                    responseMessage.includes(
+                        "profile does not exist"
+                    ) ||
+                    responseMessage.includes(
+                        "learner profile does not exist"
+                    );
+
+                if (profileNotFound) {
+                    setError("");
+                    setProfileRequired(true);
+                    return;
+                }
+
+                // Real API/server/auth error.
+                setProfileRequired(false);
+                setError(
+                    "We could not verify your learner profile. Please try again."
+                );
+
+            } finally {
+                setProfileChecking(false);
+            }
+        };
+
+    const handleCompleteProfile =
+        () => {
+            setProfileRequired(false);
+            navigate("/learner/profile");
+        };
+
+    useEffect(() => {
+        if (!profileRequired) {
+            return undefined;
+        }
+
+        const handleProfileRequiredKeyDown =
+            event => {
+                if (event.key === "Escape") {
+                    setProfileRequired(false);
+                }
+            };
+
+        document.addEventListener(
+            "keydown",
+            handleProfileRequiredKeyDown
+        );
+
+        return () => {
+            document.removeEventListener(
+                "keydown",
+                handleProfileRequiredKeyDown
             );
         };
+    }, [profileRequired]);
 
     if (!selectedCategory) {
         return (
@@ -2110,6 +2273,9 @@ const ExpertDiscovery = () => {
                                     onBook={
                                         handleBook
                                     }
+                                    bookingCheckLoading={
+                                        profileChecking
+                                    }
                                 />
                             )
                         )}
@@ -2148,7 +2314,88 @@ const ExpertDiscovery = () => {
                 expert={selectedExpert}
                 onClose={handleCloseProfile}
                 onBook={handleBook}
+                bookingCheckLoading={
+                    profileChecking
+                }
             />
+
+            {profileRequired && (
+                <div
+                    className="learner-profile-required-backdrop"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="learner-profile-required-title"
+                    onMouseDown={event => {
+                        if (
+                            event.target ===
+                            event.currentTarget
+                        ) {
+                            setProfileRequired(false);
+                        }
+                    }}
+                >
+                    <div
+                        className="learner-profile-required-modal"
+                        role="document"
+                        onMouseDown={event =>
+                            event.stopPropagation()
+                        }
+                    >
+                        <button
+                            type="button"
+                            className="learner-profile-required-close"
+                            onClick={() =>
+                                setProfileRequired(false)
+                            }
+                            aria-label="Close"
+                        >
+                            <X size={18} />
+                        </button>
+
+                        <div className="learner-profile-required-icon">
+                            <GraduationCap size={25} />
+                        </div>
+
+                        <span className="learner-profile-required-eyebrow">
+                            PROFILE REQUIRED
+                        </span>
+
+                        <h2 id="learner-profile-required-title">
+                            Complete your profile first
+                        </h2>
+
+                        <p>
+                            Before booking a session with an
+                            expert, please complete your learner
+                            profile. This helps experts understand
+                            your goals and learning needs.
+                        </p>
+
+                        <div className="learner-profile-required-actions">
+                            <button
+                                type="button"
+                                className="learner-profile-required-cancel"
+                                onClick={() =>
+                                    setProfileRequired(false)
+                                }
+                            >
+                                Cancel
+                            </button>
+
+                            <button
+                                type="button"
+                                className="learner-profile-required-primary"
+                                onClick={
+                                    handleCompleteProfile
+                                }
+                            >
+                                Complete Profile
+                                <ArrowRight size={16} />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
